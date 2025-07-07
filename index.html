@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>溫泉蛋計算器</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #fdfcfb, #e2d1c3);
+      color: #333;
+      padding: 30px;
+      max-width: 600px;
+      margin: auto;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #6d4c41;
+    }
+    label {
+      font-weight: bold;
+    }
+    select, input[type=number], input[type=range] {
+      margin: 8px 0;
+      width: 100%;
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #8d6e63;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #6d4c41;
+    }
+    .result {
+      margin-top: 25px;
+      padding: 15px;
+      background: #fff3e0;
+      border-left: 6px solid #ffb74d;
+      border-radius: 6px;
+      font-size: 1.2em;
+      font-weight: bold;
+      text-align: center;
+    }
+    .formula {
+      font-size: 0.8em;
+      color: #555;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h2>溫泉蛋計算器</h2>
+
+  <label>注水量 (ml)</label>
+  <input type="number" id="waterVolume" placeholder="例如 500">
+
+  <label>注水溫度 (°C)</label>
+  <input type="number" id="waterTemp" placeholder="例如 85">
+
+  <label>蛋重量 (g)</label>
+  <input type="number" id="eggWeight" placeholder="例如 100">
+
+  <label>蛋狀態</label>
+  <select id="eggState">
+    <option value="6">冷藏 (6°C)</option>
+    <option value="12">冷藏取出10分鐘 (12°C)</option>
+    <option value="room">室溫</option>
+  </select>
+
+  <div id="roomTempDiv" style="display:none;">
+    <label>實際室溫 (°C)</label>
+    <input type="number" id="roomTempInput" value="20">
+  </div>
+
+  <label>期望蛋黃凝固程度 (%)</label>
+  <input type="range" id="yolkPercent" min="0" max="100" value="50" oninput="document.getElementById('yolkVal').innerText=this.value">
+  <div style="text-align:center; margin-bottom:10px;">目前: <span id="yolkVal">50</span>%</div>
+
+  <button onclick="calculate()">計算建議時間</button>
+
+  <div class="result" id="result"></div>
+  <div class="formula" id="formula"></div>
+
+  <script>
+    document.getElementById("eggState").addEventListener("change", function() {
+      document.getElementById("roomTempDiv").style.display = this.value === "room" ? "block" : "none";
+    });
+
+    function toMinSec(s) {
+      var m = Math.floor(s / 60);
+      var sec = s % 60;
+      return `${m}分${sec<10?"0"+sec:sec}秒`;
+    }
+
+    function calculate() {
+      var wV = parseFloat(document.getElementById("waterVolume").value);
+      var wT = parseFloat(document.getElementById("waterTemp").value);
+      var eW = parseFloat(document.getElementById("eggWeight").value);
+      var eT = document.getElementById("eggState").value;
+      if (eT === "room") eT = parseFloat(document.getElementById("roomTempInput").value);
+      else eT = parseFloat(eT);
+
+      var yolkPercent = parseInt(document.getElementById("yolkPercent").value);
+
+      var balance = ((wV*4.18*wT)+(eW*3.5*eT))/((wV*4.18)+(eW*3.5));
+
+      var baseSeconds;
+      if (balance <70) baseSeconds = 300 + yolkPercent*12;
+      else if (balance <74) baseSeconds = 240 + yolkPercent*9;
+      else if (balance <78) baseSeconds = 180 + yolkPercent*6;
+      else baseSeconds = 120 + yolkPercent*4;
+
+      var offset = Math.round(baseSeconds * 0.05);
+      var minSeconds = baseSeconds - offset;
+      var maxSeconds = baseSeconds + offset;
+
+      var tempProtein = (balance - 60) * 4;
+      var proteinPct = Math.min(100, Math.max(0, Math.round(tempProtein)));
+
+      var rangeText = `${toMinSec(minSeconds)} - ${toMinSec(maxSeconds)}`;
+
+      document.getElementById("result").innerText = `平衡溫度約 ${balance.toFixed(1)}°C\n蛋黃凝固：${yolkPercent}% 蛋白約凝固：${proteinPct}%\n建議悶煮時間：約 ${rangeText}`;
+      document.getElementById("formula").innerText = `計算公式: ((水重*4.18*水溫)+(蛋重*3.5*蛋初溫))/((水重*4.18)+(蛋重*3.5)) = ${balance.toFixed(2)}°C ±5%`; 
+    }
+  </script>
+</body>
+</html>
